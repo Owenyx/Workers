@@ -20,7 +20,7 @@ bool is_all_digits(const string& str) {
 int main(int argc, char *argv[]) {
     // get command line input. arg1 == worker count, arg2 == upper bound for prime search
     if (argc < 3) { 
-        cout << "Too few arguments - terminating...\n";
+        cerr << "Too few arguments - terminating...\n";
         return 1; // too few arguments
     }
     string tmp1 = argv[1]; 
@@ -28,13 +28,13 @@ int main(int argc, char *argv[]) {
 
     //check argument validity
     if (!is_all_digits(tmp1) || !is_all_digits(tmp2)) { 
-        cout << "Arguments must be positive integers - terminating...\n";
+        cerr << "Arguments must be positive integers - terminating...\n";
         return 1; // quit if the arguments aren't positive integers
     }
     int workers = stoi(tmp1);
     int bound = stoi(tmp2);
     if (workers == 0) { 
-        cout << "Cannot have zero workers - terminating...\n";
+        cerr << "Cannot have zero workers - terminating...\n";
         return 1; // need workers
     }
 
@@ -61,16 +61,12 @@ int main(int argc, char *argv[]) {
         */
     }
 
-    // create/truncate a file for workers to write to
-    ofstream file("primes.txt");
-    file.close();
-
     // create and deploy workers
     for (int w = 0; w < workers; w++) {
         int pid = fork();
         if (pid < 0) {
             // fork failed
-            cout << "Fork failed.\n";
+            cerr << "Fork failed.\n";
             return 1; 
         }
         if (pid == 0) { // is worker
@@ -78,28 +74,11 @@ int main(int argc, char *argv[]) {
             // execute worker program with given arguments as bounds. 
             // The empty string arg is used to let the worker know that it was created by a boss and not by the user directly, and should therefore print to a file
             if (tmp == -1) {
-                cout << "Worker failed to execute - terminating...\n";
+                cerr << "Worker failed to execute - terminating...\n";
                 return 1;
             }
         }
     }
-
-    // Wait for all workers to get laid off in this economy, then sort and print results
-    wait(NULL);
-
-    // Put primes into a vector
-    ifstream output_file("primes.txt");
-    vector<int> vec;
-    int prime;
-    while (output_file >> prime) 
-        vec.push_back(prime);
-    // Sort
-    sort(vec.begin(), vec.end());
-    // Print
-    cout << "Primes found : ";
-    for (int prime : vec)
-        cout << prime;
-    cout << endl;
 
     return 0;
 }

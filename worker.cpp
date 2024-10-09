@@ -19,7 +19,7 @@ bool is_all_digits(const string& str) {
 int main(int argc, char *argv[]) {
     // acquire the bounds from command line input for the prime search
     if (argc < 3) { 
-        cout << "Too few arguments - terminating...\n";
+        cerr << "Too few arguments - terminating...\n";
         return 1; 
     }
     string tmp1 = argv[1]; // arg1 should be lower bound
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
     //check argument validity
     if (!is_all_digits(tmp1) || !is_all_digits(tmp2)) { 
-        cout << "Arguments must be positive integers - terminating...\n";
+        cerr << "Arguments must be positive integers - terminating...\n";
         return 1; 
     }
     int low_bound = stoi(tmp1);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
     // check bound validity
     if (up_bound < low_bound) { 
-        cout << "Upper bound cannot be less than lower bound - terminating...\n";
+        cerr << "Upper bound cannot be less than lower bound - terminating...\n";
         return 1;
     }
 
@@ -68,8 +68,10 @@ int main(int argc, char *argv[]) {
 
     // write to the output file if the worker was created by a boss, denoted by a 'w' as argv[3]
     if (argc > 3 && argv[3] == "w") {
-        fstream file("primes.txt", ios::in | ios::app);
+        ofstream file("worker_" + argv[1] + "_" + argv[2]); // add the arguments to the file's name to make it unique
+        // ex: a worker checking range 10 to 20 will write to worker_10_20
         for (int i : vec) file << i << " ";
+        file.close();
     }
     else { // the worker was created directly by a user rather than a boss
         cout << "Primes found : ";
