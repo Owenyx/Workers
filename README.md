@@ -1,6 +1,3 @@
-    Complementary joke:
-This program simulates the 9-5 experience, where the boss sends his workers out and then proceeds to do nothing.
-
 Note: All bounds/ranges mentioned in this document are inclusive
 
     Overview:
