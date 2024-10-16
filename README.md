@@ -34,7 +34,7 @@ worker_226_302
 
 If the number of workers is greater than the size of the range, the number of workers will be reduced to give each worker one number to check
 
-The worker program can also be run standalone by entering.
+The worker program can also be run standalone by entering:
 make
 ./worker <lower bound> <upper bound>
 The program will find the primes within the bounds, which must both be positive.
