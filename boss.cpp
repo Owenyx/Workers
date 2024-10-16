@@ -5,8 +5,13 @@
 #include <sys/wait.h>
 #include <fstream>
 #include <algorithm>
+#include <cstdio>
+#include <regex>
+#include <filesystem>
+#include <string>
 
 using namespace std;
+namespace fs = filesystem;
 
 bool is_all_digits(const string& str) {
     for (char ch : str) {
@@ -17,7 +22,34 @@ bool is_all_digits(const string& str) {
     return true;
 }
 
+// Takes a regex pattern and a path and deletes all files mathing the pattern
+int delete_files(regex pattern, string path) {
+    // Iterate over the files in the directory
+    for (const auto& entry : fs::directory_iterator(path)) {
+        // Get the file name
+        string filename = entry.path().filename().string();
+
+        // Check if the file name matches the pattern
+        if (regex_match(filename, pattern)) {
+            // Attempt to delete the file
+            if (remove(entry.path().c_str()) != 0) {
+                cerr << ("Error deleting file: " + filename);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
+
+    // Delete all previous worker output files
+    regex pattern(R"(worker_\d+_\d+)");
+    string path = "."; // current directory
+    if (delete_files(pattern, path))
+        return 1; // File deletion failed
+
+
     // get command line input. arg1 == worker count, arg2 == upper bound for prime search
     if (argc < 3) { 
         cerr << "Too few arguments - terminating...\n";
@@ -44,8 +76,15 @@ int main(int argc, char *argv[]) {
         return 0; // 2 is the lowest prime
     }
 
-    // determine the ranges that the workers should search
+    // determine the ranges that the workers should search and assign them accordingly
     int quotient = bound / workers; // quotient is the number of primes that is divided amongst the workers
+    
+    // If there is less numbers in the range than there are workers, reduce the number of workers so each has something to do
+    while (quotient == 0) {
+        workers = bound;
+        quotient = 1; // Each worker gets one number to check as there is the same number of workers as numbers
+    }
+    
     int up_bound = quotient; // used in following loop in order to set bounds, changes with each iterations
     vector<vector<int>> ranges(workers, vector<int>(2)); // each row will represent a worker, each column will represent their lower and upper bound
     for (auto &range : ranges) {
@@ -61,6 +100,10 @@ int main(int argc, char *argv[]) {
         */
     }
 
+    // Remainder of workload that isn't evenly distributed is given to last worker
+    int remainder = bound % workers; 
+    ranges[workers-1][1] += remainder; // add remainder to upper bound of last worker
+
     // create and deploy workers
     for (int w = 0; w < workers; w++) {
         int pid = fork();
@@ -72,7 +115,7 @@ int main(int argc, char *argv[]) {
         if (pid == 0) { // is worker
             int tmp = execl("worker", "./worker", to_string(ranges[w][0]).c_str(), to_string(ranges[w][1]).c_str(), "w", (char*)NULL); 
             // execute worker program with given arguments as bounds. 
-            // The empty string arg is used to let the worker know that it was created by a boss and not by the user directly, and should therefore print to a file
+            // The "w" arg is used to let the worker know that it was created by a boss and not by the user directly, and should therefore print to a file
             if (tmp == -1) {
                 cerr << "Worker failed to execute - terminating...\n";
                 return 1;

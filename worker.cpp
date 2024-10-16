@@ -30,10 +30,9 @@ int main(int argc, char *argv[]) {
         cerr << "Arguments must be positive integers - terminating...\n";
         return 1; 
     }
+    // convert arguments to ints
     int low_bound = stoi(tmp1);
     int up_bound = stoi(tmp2);
-
-    if (low_bound < 2) low_bound = 2; // 2 is the lowest prime
 
     // check bound validity
     if (up_bound < low_bound) { 
@@ -41,34 +40,43 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // create a vector with all numbers within the range
-    vector<int> vec(up_bound-low_bound+1, 0); // +1 since upper bound is inclusive
-    for (int i = 0; i < vec.size(); i++) vec[i] = i + low_bound; // load vector
+    if (low_bound < 1) {
+        cerr << "Range must consist only of posistive numbers - terminating...\n";
+        return 1;
+    }
 
     /* 
-    create a vector of all primes up to and including the square root of up_bound using sieve.
+    create a vector of all primes from 2 up to and including the square root of up_bound using sieve.
     this way we will use these prime numbers to perform the algorithm very efficiently on the given range, 
     as any value that is a multiple of any of the primes <= root is not prime
     */
     int root = (int)sqrt(up_bound);
     vector<int> divisors(root-1, 0); // root-1 as it will include root but not 1 or 0
-    for (int i = 0; i < divisors.size(); i++) divisors[i] = i+2; // load vector. i+2 because the first number will be 2
+    for (int i = 0; i < (int)divisors.size(); i++) divisors[i] = i+2; // load vector. i+2 because the first number will be 2
 
     // now iterate through the vector, deleting every multiple of i
-    for (int i = 0; i < divisors.size(); i++) 
-        for(int j = i + 1; j < divisors.size(); j++)  // j starts at i + 1 as all values i and lower are prime
+    for (int i = 0; i < (int)divisors.size(); i++) 
+        for(int j = i + 1; j < (int)divisors.size(); j++)  // j starts at i + 1 as all values i and lower are prime
             if (divisors[j] % divisors[i] == 0) divisors.erase(divisors.begin() + j);
 
     // now divisors contains all prime numbers <= root
 
+    // create a vector with all numbers within the range
+    vector<int> vec(up_bound-low_bound+1, 0); // +1 since upper bound is inclusive
+    for (int i = 0; i < (int)vec.size(); i++) vec[i] = i + low_bound; // load vector
+    
+    // Erase 1 if present
+    if (low_bound == 1)
+        vec.erase(vec.begin());
+
     // Now check which numbers in vec are divisible by the primes in divisors and erase them
     for (int i : divisors) 
-        for(int j = 0; j < vec.size(); j++) 
+        for(int j = 0; j < (int)vec.size(); j++) 
             if (vec[j] != i && vec[j] % i == 0) vec.erase(vec.begin() + j);
 
     // write to the output file if the worker was created by a boss, denoted by a 'w' as argv[3]
-    if (argc > 3 && argv[3] == "w") {
-        ofstream file("worker_" + argv[1] + "_" + argv[2]); // add the arguments to the file's name to make it unique
+    if (argc > 3 && (string)argv[3] == "w") {
+        ofstream file("worker_" + (string)argv[1] + "_" + (string)argv[2]); // add the arguments to the file's name to make it unique
         // ex: a worker checking range 10 to 20 will write to worker_10_20
         for (int i : vec) file << i << " ";
         file.close();
